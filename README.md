@@ -1,6 +1,7 @@
 # Voyager-Golden-Record-Decoder
-Source code to read and decode the images from the Voyager 1 space craft's Golden Record.
+Source code to read and decode the images from the Voyager 1 space craft's Golden Record.  Source Wav file here:
 
+https://drive.google.com/drive/folders/0B0Swx_1rwA6XcFFLc29ncFJSZmM
 
 This file captures a decoding attempt of the Voyager Golden Disk.  I have purposefully not read anything about the technology.  I am working strictly from the 384K sample wav data and an image of the disc itself with the inscriptions.
 
