@@ -24,8 +24,12 @@ namespace VoyagerImageDecoder
             List<Segment> startLocations = new List<Segment>()
             {
                 new Segment() { Channel = Channel.Left, Header = 88, CurrentPosition = 0, StartSample = 6000208, LengthSample = 1928181, WindowLengthSample = 3400 },
-                new Segment() { Channel = Channel.Right, Header = 88, CurrentPosition = 0, StartSample = 6503334, LengthSample = 1841946, WindowLengthSample = 3400 }
-                //new Segment() { Channel = Channel.Left, Header = 88, CurrentPosition = 0, StartSample = 8312903, LengthSample = 1946880, WindowLengthSample = 3400 }
+                new Segment() { Channel = Channel.Right, Header = 88, CurrentPosition = 0, StartSample = 6503334, LengthSample = 1841946, WindowLengthSample = 3400 },
+                new Segment() { Channel = Channel.Left, Header = 88, CurrentPosition = 0, StartSample = 8312903, LengthSample = 1946880, WindowLengthSample = 3400 },
+                new Segment() { Channel = Channel.Right, Header = 88, CurrentPosition = 0, StartSample = 8657173, LengthSample = 1908929, WindowLengthSample = 3400 },
+                new Segment() { Channel = Channel.Left, Header = 88, CurrentPosition = 0, StartSample = 21715098, LengthSample = 1787198, WindowLengthSample = 3400 },
+                new Segment() { Channel = Channel.Left, Header = 88, CurrentPosition = 0, StartSample = 28675794, LengthSample = 1821805, WindowLengthSample = 3400 },
+                new Segment() { Channel = Channel.Right, Header = 88, CurrentPosition = 0, StartSample = 30786540, LengthSample = 1834844, WindowLengthSample = 3400 }
             };
 
             foreach (Segment s in startLocations)
@@ -183,7 +187,6 @@ namespace VoyagerImageDecoder
 
         public float[] OffsetColor(float[] data)
         {
-            float a = data.Max();
             float b = data.Min();
 
             for (int i = 0; i < data.Length; i++)
