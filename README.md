@@ -1,5 +1,12 @@
 # Voyager-Golden-Record-Decoder
-Source code to read and decode the images from the Voyager 1 space craft's Golden Record.  Source Wav file here:
+Source code to read and decode the images from the Voyager 1 space craft's Golden Record.
+
+With a little editing in photoshop to adjust tones, the recovered images look like this:
+
+![alt text](https://i.imgur.com/DGeCYOR.jpg)
+
+
+Source Wav file here:
 
 https://drive.google.com/drive/folders/0B0Swx_1rwA6XcFFLc29ncFJSZmM
 
