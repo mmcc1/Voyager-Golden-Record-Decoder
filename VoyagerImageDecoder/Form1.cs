@@ -53,7 +53,7 @@ namespace VoyagerImageDecoder
                 //new ImageSegment() { Channel = StereoChannel.Right, Header = 88, StartSample = 8657173, LengthSample = 1908929 },
                 //new ImageSegment() { Channel = StereoChannel.Left, Header = 88, StartSample = 21715098, LengthSample = 1787198 },
                 //new ImageSegment() { Channel = StereoChannel.Left, Header = 88, StartSample = 28675794, LengthSample = 1821805 },
-                new ImageSegment() { Channel = StereoChannel.Right, Header = 88, StartSample = 30786540, LengthSample = 1834844, Offset = 655 }
+                new ImageSegment() { Channel = StereoChannel.Right, Header = 88, StartSample = 30786540, LengthSample = 1834844, Offset = 217 }
             };
 
             
@@ -62,8 +62,6 @@ namespace VoyagerImageDecoder
 
             pictureBox1.Image = images.Item1[0];
             pictureBox2.Image = images.Item2[0];
-
-
         }
     }
 

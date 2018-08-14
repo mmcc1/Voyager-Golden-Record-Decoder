@@ -95,7 +95,7 @@
             this.numericUpDown2.Enabled = false;
             this.numericUpDown2.Location = new System.Drawing.Point(15, 119);
             this.numericUpDown2.Maximum = new decimal(new int[] {
-            1000000,
+            3000,
             0,
             0,
             0});
@@ -103,7 +103,7 @@
             this.numericUpDown2.Size = new System.Drawing.Size(147, 20);
             this.numericUpDown2.TabIndex = 2;
             this.numericUpDown2.Value = new decimal(new int[] {
-            655,
+            217,
             0,
             0,
             0});
@@ -114,7 +114,7 @@
             this.numericUpDown1.Enabled = false;
             this.numericUpDown1.Location = new System.Drawing.Point(15, 54);
             this.numericUpDown1.Maximum = new decimal(new int[] {
-            1000000,
+            3000,
             0,
             0,
             0});

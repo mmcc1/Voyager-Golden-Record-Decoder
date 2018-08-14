@@ -14,7 +14,7 @@
  * 
  * 
  * 
- * VoyagerReader5
+ * VoyagerReader6
  * 
  * This file reads and decodes images, in stereo IEEE Float format, from the Voyager Golden Record.
  * 
@@ -31,7 +31,7 @@
  * The primary difference between this and VoyagerReader5 is that the contrast changes have been undone.  An Offset has been added which has the
  * effect of compressing the selected range of the time domain signal.  Think of an accordian.  This is similar to a tuner, but it is a makeshift
  * approach to dealing with timing jitter.  Controls have been added to the left of the form to adjust the offset.  In the default image for the
- * right channel, try values 0 and 655 to observe the difference.
+ * right channel, try values 0 and 217 and 655 to observe the differences.
  * 
  * 
  */
@@ -132,25 +132,8 @@ namespace VoyagerImageDecoder
         {
             Bitmap img = new Bitmap(ic.Count, 384, PixelFormat.Format32bppArgb);
 
-            float max = float.MinValue;
-            float min = float.MaxValue;
-            float range = 0.0f;
-            float dynRange = 0;
-
             x = 0;
             y = 0;
-
-            foreach (ImageColumn im in ic)
-            {
-                if (im.PixelPack.Max() > max)
-                    max = im.PixelPack.Max();
-
-                if (im.PixelPack.Min() < min)
-                    min = im.PixelPack.Min();
-            }
-
-            range = max - min;
-            dynRange = range / 16;
 
             foreach (ImageColumn im in ic)
             {
@@ -159,7 +142,7 @@ namespace VoyagerImageDecoder
                     Color c;
 
                     if (im.PixelPack[i] >= 0)
-                        c = GreyscaleMapper(im.PixelPack[i], im.d);//, (im.End - im.Start) / 384, dynRange, min);
+                        c = GreyscaleMapper(im.PixelPack[i], im.d);
                     else
                         c = Color.White;
 
