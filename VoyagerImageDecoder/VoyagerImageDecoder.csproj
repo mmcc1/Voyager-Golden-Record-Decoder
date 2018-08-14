@@ -58,6 +58,8 @@
     <Compile Include="VoyagerReader2.cs" />
     <Compile Include="VoyagerReader3.cs" />
     <Compile Include="VoyagerReader4.cs" />
+    <Compile Include="VoyagerReader5.cs" />
+    <Compile Include="VoyagerReader6.cs" />
     <Compile Include="WindowReader.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>

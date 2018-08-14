@@ -14,7 +14,7 @@
  * 
  * 
  * 
- * VoyagerReader4
+ * VoyagerReader5
  * 
  * This file reads and decodes images, in stereo IEEE Float format, from the Voyager Golden Record.
  * 
@@ -28,12 +28,10 @@
  * 
  * 
  * Notes:
- * The primary difference between this and VoyagerReader3 is that rather than normalising luminosity on a per column basis this normalises on
- * a per image basis.  This removes the vertical stripes in the images.  From this point onwards, its becoming less about refinements in the
- * extraction process and more on image recontruction.  Although, some images do point to extraction issues as the source.
- * 
- * I've also moved away from the earlier framework of Segment and WindowReader making this file more self contained. There are minor changes to 
- * the peak detection as well.
+ * The primary difference between this and VoyagerReader5 is that the contrast changes have been undone.  An Offset has been added which has the
+ * effect of compressing the selected range of the time domain signal.  Think of an accordian.  This is similar to a tuner, but it is a makeshift
+ * approach to dealing with timing jitter.  Controls have been added to the left of the form to adjust the offset.  In the default image for the
+ * right channel, try values 0 and 655 to observe the difference.
  * 
  * 
  */
@@ -47,13 +45,14 @@ using System.Linq;
 
 namespace VoyagerImageDecoder
 {
-    public class VoyagerReader4
+    public class VoyagerReader6
     {
         private int x, y;
         private List<Bitmap> leftExtractedImages;
         private List<Bitmap> rightExtractedImages;
+        private float[] leftSamples, rightSamples;
 
-        public VoyagerReader4()
+        public VoyagerReader6()
         {
             leftExtractedImages = new List<Bitmap>();
             rightExtractedImages = new List<Bitmap>();
@@ -112,7 +111,8 @@ namespace VoyagerImageDecoder
 
 
                 //Process channels
-                List<ImageColumn> leftic = ProcessChannel(leftSampleBuffer, windowLength);
+                leftSamples = leftSampleBuffer;
+                List<ImageColumn> leftic = ProcessChannel(leftSampleBuffer, windowLength, s.Offset);
 
                 //Generate the images
                 GenerateImage(leftic, ref leftExtractedImages);
@@ -121,15 +121,36 @@ namespace VoyagerImageDecoder
             {
                 rightSampleBuffer = Invert(rightSampleBuffer);
                 rightSampleBuffer = OffsetColor(rightSampleBuffer);
-                List<ImageColumn> rightic = ProcessChannel(rightSampleBuffer, windowLength);
+                rightSamples = rightSampleBuffer;
+                List<ImageColumn> rightic = ProcessChannel(rightSampleBuffer, windowLength, s.Offset);
                 GenerateImage(rightic, ref rightExtractedImages);
             }
-            
+
         }
 
         private void GenerateImage(List<ImageColumn> ic, ref List<Bitmap> images)
         {
             Bitmap img = new Bitmap(ic.Count, 384, PixelFormat.Format32bppArgb);
+
+            float max = float.MinValue;
+            float min = float.MaxValue;
+            float range = 0.0f;
+            float dynRange = 0;
+
+            x = 0;
+            y = 0;
+
+            foreach (ImageColumn im in ic)
+            {
+                if (im.PixelPack.Max() > max)
+                    max = im.PixelPack.Max();
+
+                if (im.PixelPack.Min() < min)
+                    min = im.PixelPack.Min();
+            }
+
+            range = max - min;
+            dynRange = range / 16;
 
             foreach (ImageColumn im in ic)
             {
@@ -138,7 +159,7 @@ namespace VoyagerImageDecoder
                     Color c;
 
                     if (im.PixelPack[i] >= 0)
-                        c = GreyscaleMapper(im.PixelPack[i], (im.End - im.Start) / 384);
+                        c = GreyscaleMapper(im.PixelPack[i], im.d);//, (im.End - im.Start) / 384, dynRange, min);
                     else
                         c = Color.White;
 
@@ -164,7 +185,23 @@ namespace VoyagerImageDecoder
             return Color.FromArgb((int)(200 - (255 * (data / d))), 0, 0, 0);
         }
 
-        private List<ImageColumn> ProcessChannel(float[] samples, int windowLength)
+        public List<Bitmap> ReprocessLeftChannel(int offset)
+        {
+            leftExtractedImages.Clear();
+            GenerateImage(ProcessChannel(leftSamples, 3400, offset), ref leftExtractedImages);
+            return leftExtractedImages;
+        }
+
+        public List<Bitmap> ReprocessRightChannel(int offset)
+        {
+            rightExtractedImages.Clear();
+
+            GenerateImage(ProcessChannel(rightSamples, 3400, offset), ref rightExtractedImages); 
+
+            return rightExtractedImages;
+        }
+
+        private List<ImageColumn> ProcessChannel(float[] samples, int windowLength, int offset)
         {
             List<ImageColumn> ics = new List<ImageColumn>();
             int currentIndex = 0;
@@ -177,13 +214,15 @@ namespace VoyagerImageDecoder
                 //Read a windowlength, find its peaks, extract image data
                 float[] sampleBuffer = new float[windowLength];
                 Array.Copy(samples, currentIndex, sampleBuffer, 0, windowLength);
-                ic.Start = FindStartPeak(sampleBuffer);
+                ic.Start = FindStartPeak(sampleBuffer) + offset;
                 ic.End = FindEndPeak(sampleBuffer);
+
                 ic.RawSamples = new float[ic.End - ic.Start];
                 Array.Copy(sampleBuffer, ic.Start, ic.RawSamples, 0, ic.RawSamples.Length);
 
                 //Demodulate the image from AM signal
-                ic.PixelPack = PixelPack(ic.RawSamples, (ic.End - ic.Start) / 384);
+                ic.d = (ic.End - ic.Start) / 384;
+                ic.PixelPack = PixelPack(ic.RawSamples, ic.d);
 
                 ics.Add(ic);
 
@@ -295,33 +334,5 @@ namespace VoyagerImageDecoder
 
             return index;
         }
-    }
-
-    public class ImageColumn
-    {
-        public int Index { get; set; }
-        public StereoChannel Channel { get; set; }
-        public int Start { get; set; }  //Start of Image column (lowest peak)
-        public int End { get; set; }  //End of image column (highest peak)
-        public float[] RawSamples { get; set; }
-        public float[] PixelPack { get; set; }  //Array of 384 pixels
-        public int d { get; set; }
-    }
-
-    public enum StereoChannel
-    {
-        Left,
-        Right
-    }
-
-    public class ImageSegment
-    {
-        public StereoChannel Channel { get; set; }
-        public int Header { get; set; }
-        public int Start { get; set; }
-        public int StartSample { get; set; }
-        public int Length { get; set; }
-        public int LengthSample { get; set; }
-        public int Offset { get; set; }
     }
 }

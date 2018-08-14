@@ -14,7 +14,7 @@
  * 
  * 
  * 
- * VoyagerReader4
+ * VoyagerReader5
  * 
  * This file reads and decodes images, in stereo IEEE Float format, from the Voyager Golden Record.
  * 
@@ -28,12 +28,11 @@
  * 
  * 
  * Notes:
- * The primary difference between this and VoyagerReader3 is that rather than normalising luminosity on a per column basis this normalises on
- * a per image basis.  This removes the vertical stripes in the images.  From this point onwards, its becoming less about refinements in the
- * extraction process and more on image recontruction.  Although, some images do point to extraction issues as the source.
+ * The primary difference between this and VoyagerReader4 is an increase in the contrast between light and dark tones.  This has been mapped to
+ * 16 values.
  * 
- * I've also moved away from the earlier framework of Segment and WindowReader making this file more self contained. There are minor changes to 
- * the peak detection as well.
+ * The increased contrast has revealed extensive issues with timing jitter.  This results in misaligned columns.  The ultimate cause is the random
+ * drift in the original recording, plus any small drift in the sampling system used to create the Wav file.
  * 
  * 
  */
@@ -47,13 +46,13 @@ using System.Linq;
 
 namespace VoyagerImageDecoder
 {
-    public class VoyagerReader4
+    public class VoyagerReader5
     {
         private int x, y;
         private List<Bitmap> leftExtractedImages;
         private List<Bitmap> rightExtractedImages;
 
-        public VoyagerReader4()
+        public VoyagerReader5()
         {
             leftExtractedImages = new List<Bitmap>();
             rightExtractedImages = new List<Bitmap>();
@@ -124,12 +123,32 @@ namespace VoyagerImageDecoder
                 List<ImageColumn> rightic = ProcessChannel(rightSampleBuffer, windowLength);
                 GenerateImage(rightic, ref rightExtractedImages);
             }
-            
+
         }
 
         private void GenerateImage(List<ImageColumn> ic, ref List<Bitmap> images)
         {
             Bitmap img = new Bitmap(ic.Count, 384, PixelFormat.Format32bppArgb);
+
+            float max = float.MinValue;
+            float min = float.MaxValue;
+            float range = 0.0f;
+            float dynRange = 0;
+
+            foreach (ImageColumn im in ic)
+            {
+                if (im.PixelPack.Max() > max)
+                    max = im.PixelPack.Max();
+
+                if (im.PixelPack.Min() < min)
+                    min = im.PixelPack.Min();
+            }
+
+            x = 0;
+            y = 0;
+
+            range = max - min;
+            dynRange = range / 16;
 
             foreach (ImageColumn im in ic)
             {
@@ -138,7 +157,7 @@ namespace VoyagerImageDecoder
                     Color c;
 
                     if (im.PixelPack[i] >= 0)
-                        c = GreyscaleMapper(im.PixelPack[i], (im.End - im.Start) / 384);
+                        c = GreyscaleMapper(im.PixelPack[i], (im.End - im.Start) / 384, dynRange, min);
                     else
                         c = Color.White;
 
@@ -158,10 +177,13 @@ namespace VoyagerImageDecoder
             images.Add(img);
         }
 
-        public Color GreyscaleMapper(float data, int d)
+        public Color GreyscaleMapper(float data, int d, float dynRange, float min)
         {
-            int i = 0;  //1.0f = black
-            return Color.FromArgb((int)(200 - (255 * (data / d))), 0, 0, 0);
+            int co = (int)((data - min) / dynRange);
+
+            if (co == 0)
+                co = 1;
+            return Color.FromArgb(255 / co, 0, 0, 0);
         }
 
         private List<ImageColumn> ProcessChannel(float[] samples, int windowLength)
@@ -179,6 +201,7 @@ namespace VoyagerImageDecoder
                 Array.Copy(samples, currentIndex, sampleBuffer, 0, windowLength);
                 ic.Start = FindStartPeak(sampleBuffer);
                 ic.End = FindEndPeak(sampleBuffer);
+
                 ic.RawSamples = new float[ic.End - ic.Start];
                 Array.Copy(sampleBuffer, ic.Start, ic.RawSamples, 0, ic.RawSamples.Length);
 
@@ -295,33 +318,74 @@ namespace VoyagerImageDecoder
 
             return index;
         }
-    }
+        /*
+        private int FindStartDataPeak(float[] data)
+        {
+            float b = float.MinValue;
+            int index = 0;
 
-    public class ImageColumn
-    {
-        public int Index { get; set; }
-        public StereoChannel Channel { get; set; }
-        public int Start { get; set; }  //Start of Image column (lowest peak)
-        public int End { get; set; }  //End of image column (highest peak)
-        public float[] RawSamples { get; set; }
-        public float[] PixelPack { get; set; }  //Array of 384 pixels
-        public int d { get; set; }
-    }
+            for (int i = 0; i < 350; i++)
+            {
+                if (data[i] > b)
+                {
+                    b = data[i];
+                    index = i;
+                }
+            }
 
-    public enum StereoChannel
-    {
-        Left,
-        Right
-    }
+            return index;
+        }
 
-    public class ImageSegment
-    {
-        public StereoChannel Channel { get; set; }
-        public int Header { get; set; }
-        public int Start { get; set; }
-        public int StartSample { get; set; }
-        public int Length { get; set; }
-        public int LengthSample { get; set; }
-        public int Offset { get; set; }
+        private int FindStartDataPeak(float[] data, int offset)
+        {
+            float b = float.MinValue;
+            int index = 0;
+
+            for (int i = offset; i < 1000; i++)
+            {
+                if (data[i] > b)
+                {
+                    b = data[i];
+                    index = i;
+                }
+            }
+
+            return index;
+        }
+
+        private int FindEndDataPeak(float[] data)
+        {
+            float b = float.MinValue;
+            int index = 0;
+
+            for (int i = 3100; i < 3250; i++)
+            {
+                if (data[i] > b)
+                {
+                    b = data[i];
+                    index = i;
+                }
+            }
+
+            return index;
+        }
+
+        private int FindEndTimingFramePeak(float[] data)
+        {
+            float b = float.MaxValue;
+            int index = 2500;
+
+            for (int i = 2500; i < data.Length; i++)
+            {
+                if (data[i] < b)
+                {
+                    b = data[i];
+                    index = i;
+                }
+            }
+
+            return index;
+        }
+        */
     }
 }
