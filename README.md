@@ -3,7 +3,7 @@ Source code to read and decode the images from the Voyager 1 space craft's Golde
 
 With a little editing in photoshop to adjust tones, the recovered images look like this:
 
-![alt text](https://i.imgur.com/DGeCYOR.jpg)
+![alt text](https://i.imgur.com/Z5qRYMb.jpg)
 
 
 Source Wav file here:
