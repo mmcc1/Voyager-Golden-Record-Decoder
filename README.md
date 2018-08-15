@@ -1,5 +1,5 @@
 # Voyager-Golden-Record-Decoder
-Source code to read and decode the images from the Voyager 1 space craft's Golden Record.
+Source code to read and decode the images from the Voyager 1 space craft's Golden Record.  The source code is the demodulator portion of a very early modem.
 
 With a little editing in photoshop to adjust tones, the recovered images look like this:
 
